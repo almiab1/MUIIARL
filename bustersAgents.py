@@ -367,7 +367,6 @@ class RLAgent(BustersAgent):
                 return self.actions["South"]
     
     def isFoodInDirection(self,pacmanPos, direction, foodMap):
-        # print foodMap        
         filas = foodMap.height
         columnas = foodMap.width
         matrix = np.array(foodMap.data)
@@ -438,7 +437,11 @@ class RLAgent(BustersAgent):
         direction = self.getDirection(state.getPacmanPosition(), gost_position)
         isFoodInDirection = self.isFoodInDirection(state.getPacmanPosition(), direction, state.data.food)
         
-        print direction + (isFoodInDirection * 4)
+        position_computed = direction + (isFoodInDirection * 4)
+        
+        print position_computed
+        
+        return position_computed
 
     def getQValue(self, state, action):
 
@@ -571,7 +574,7 @@ class RLAgent(BustersAgent):
         else:
             # If the game continues
             max_action = self.computeValueFromQValues(nextState)
-            new_q = ((1 - self.alpha) * q) + (self.alpha * (reward + self.discount * max_action))
+            new_q = ((1 - self.alpha) * q) + (self.alpha * (reward + self.gamma * max_action))
 
         self.setQValue(state, action, new_q)
         self.writeQtable()
