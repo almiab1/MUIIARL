@@ -343,8 +343,23 @@ class RLAgent(BustersAgent):
         print "\tState from compute position: "
         # Get the nearest ghost
         print state.data.ghostDistances
+
         nearest_ghost = np.argmin(state.data.ghostDistances)
-        print nearest_ghost
+        nearest_dot = state.getDistanceNearestFood()
+
+        print nearest_ghost, nearest_dot
+
+        gost_position = state.getGhostPositions()[nearest_ghost]
+
+        print gost_position
+
+        # Get direction between pacman and ghost
+        direction_x = gost_position[0] - state.getPacmanPosition()[0]
+        direction_y = gost_position[1] - state.getPacmanPosition()[1]
+
+        directionnp.argmin(state.data.ghostDistances)
+
+        print direction_x,direction_y
 	
 
     def getQValue(self, state, action):
