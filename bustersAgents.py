@@ -139,6 +139,39 @@ class RandomPAgent(BustersAgent):
                     food = food + 1
         return food
     
+    def printInfo(self, gameState):
+        # Dimensiones del mapa
+        width, height = gameState.data.layout.width, gameState.data.layout.height
+        print "\tWidth: ", width, " Height: ", height
+        # Posicion del Pacman
+        print "\tPacman position: ", gameState.getPacmanPosition()
+        # Acciones legales de pacman en la posicion actual
+        print "\tLegal actions: ", gameState.getLegalPacmanActions()
+        # Direccion de pacman
+        print "\tPacman direction: ", gameState.data.agentStates[0].getDirection()
+        # Numero de fantasmas
+        print "\tNumber of ghosts: ", gameState.getNumAgents() - 1
+        # Fantasmas que estan vivos (el indice 0 del array que se devuelve corresponde a pacman y siempre es false)
+        print "\tLiving ghosts: ", gameState.getLivingGhosts()[1:]
+        # Posicion de los fantasmas
+        print "\tGhosts positions: ", gameState.getGhostPositions()
+        # Direciones de los fantasmas
+        print "\tGhosts directions: ", [gameState.getGhostDirections().get(i) for i in range(0, gameState.getNumAgents() - 1)]
+        # Distancia de manhattan a los fantasmas
+        print "\tGhosts distances: ", gameState.data.ghostDistances
+        # Puntos de comida restantes
+        print "\tPac dots: ", gameState.getNumFood()
+        # Distancia de manhattan a la comida mas cercada
+        print "\tDistance nearest pac dots: ", gameState.getDistanceNearestFood()
+        # Paredes del mapa
+        print "\tMap Walls:  \n", gameState.getWalls()
+        # Comida en el mapa
+        print "\tMap Food:  \n", gameState.data.food
+	    # Estado terminal
+        print "\tGana el juego: ", gameState.isWin()
+        # Puntuacion
+        print "\tScore: ", gameState.getScore()
+    
     ''' Print the layout'''  
     def printGrid(self, gameState):
         table = ""
@@ -151,6 +184,7 @@ class RandomPAgent(BustersAgent):
         return table
         
     def chooseAction(self, gameState):
+        self.printInfo(gameState)   
         move = Directions.STOP
         legal = gameState.getLegalActions(0) ##Legal position from the pacman
         move_random = random.randint(0, 3)
@@ -314,13 +348,69 @@ class RLAgent(BustersAgent):
         for line in self.q_table:
             for item in line:
                 self.table_file.write(str(item)+" ")
-            self.table_file.write("\n")
+            self.table_file.write("\n")       
 
+    # From two positions, get the direction from one to another. Possible directions: North, East, South, West            
+    def getDirection(self, pacman, ghost):
+        dx = ghost[0] - pacman[0]
+        dy = ghost[1] - pacman[1]
+
+        if abs(dx) > abs(dy):
+            if dx > 0:
+                return self.actions["West"]
+            else:
+                return self.actions["East"]
+        else:
+            if dy > 0:
+               return self.actions["North"]
+            else:
+                return self.actions["South"]
+    
+    def isFoodInDirection(self,pacmanPos, direction, foodMap):
+        # print foodMap        
+        filas = foodMap.height
+        columnas = foodMap.width
+        matrix = np.array(foodMap.data)
+
+        # Verify that the initial position is within the limits of the matrix.
+        if pacmanPos[0] < 0 or pacmanPos[0] >= filas or pacmanPos[1] < 0 or pacmanPos[1] >= columnas:
+            return False
+
+        # Get the address in terms of offset in rows and columns
+        if direction == self.actions["North"]:
+            row_move = -1
+        elif direction ==  self.actions["South"]:
+            row_move = 1
+        elif direction == self.actions["East"]:
+            col_move = 1
+        elif direction == self.actions["West"]:
+            col_move = -1
+        # else:
+            # raise ValueError("Invalid address. Must be 'north', 'south', 'east' or 'west'.")
+
+        # Perform the search at the indicated address
+        current_row, current_row = pacmanPos
+        
+        while 0 <= current_row < filas and 0 <= current_row < columnas:
+            if direction == self.actions["North"] or direction == self.actions["South"]:
+                if any(matrix[current_row,:]):
+                    return 1
+        
+                current_row += row_move
+        
+            if direction == self.actions["East"] or direction == self.actions["West"]:
+                if any(matrix[:,current_row]):
+                    return 1
+        
+                current_row += col_move
+
+        return 0
+    
     def computePosition(self, state):
         """
         Compute the row of the qtable for a given state.
         """
-            ###########################	INSERTA TU CODIGO AQUI  #########################################
+        ###########################	INSERTA TU CODIGO AQUI  #########################################
         #
         # INSTRUCCIONES:
         #
@@ -342,25 +432,13 @@ class RLAgent(BustersAgent):
         #################################################################################################
         print "\tState from compute position: "
         # Get the nearest ghost
-        print state.data.ghostDistances
-
         nearest_ghost = np.argmin(state.data.ghostDistances)
-        nearest_dot = state.getDistanceNearestFood()
-
-        print nearest_ghost, nearest_dot
-
         gost_position = state.getGhostPositions()[nearest_ghost]
-
-        print gost_position
-
-        # Get direction between pacman and ghost
-        direction_x = gost_position[0] - state.getPacmanPosition()[0]
-        direction_y = gost_position[1] - state.getPacmanPosition()[1]
-
-        directionnp.argmin(state.data.ghostDistances)
-
-        print direction_x,direction_y
-	
+        
+        direction = self.getDirection(state.getPacmanPosition(), gost_position)
+        isFoodInDirection = self.isFoodInDirection(state.getPacmanPosition(), direction, state.data.food)
+        
+        print direction + (isFoodInDirection * 4)
 
     def getQValue(self, state, action):
 
