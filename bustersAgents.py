@@ -350,22 +350,26 @@ class RLAgent(BustersAgent):
                 self.table_file.write(str(item)+" ")
             self.table_file.write("\n")       
 
-    # From two positions, get the direction from one to another. Possible directions: North, East, South, West            
+    # From two positions, get the direction from one to another. 
+    # Possible directions: North, East, South, West            
     def getDirection(self, pacman, ghost):
-        dx = ghost[0] - pacman[0]
-        dy = ghost[1] - pacman[1]
+        row = pacman[0] - ghost[0]
+        col = pacman[1] - ghost[1]
 
-        if abs(dx) > abs(dy):
-            if dx > 0:
-                return self.actions["West"]
-            else:
-                return self.actions["East"]
-        else:
-            if dy > 0:
-               return self.actions["North"]
+        print "Row-Col diff --> ",row,col
+
+        if abs(row) > abs(col):
+            if row > 0:
+                return self.actions["North"]
             else:
                 return self.actions["South"]
-    
+        else:
+            if col > 0:
+               return self.actions["West"]
+            else:
+                return self.actions["East"]
+    # Check if there is food in the direction indicated by the parameter "direction" from the position "pacmanPos" in the map "foodMap"
+    # Return 1 if there is food, 0 otherwise
     def isFoodInDirection(self,pacmanPos, direction, foodMap):
         filas = foodMap.height
         columnas = foodMap.width
@@ -373,7 +377,7 @@ class RLAgent(BustersAgent):
 
         # Verify that the initial position is within the limits of the matrix.
         if pacmanPos[0] < 0 or pacmanPos[0] >= filas or pacmanPos[1] < 0 or pacmanPos[1] >= columnas:
-            return False
+            return 0
 
         # Get the address in terms of offset in rows and columns
         if direction == self.actions["North"]:
@@ -439,7 +443,8 @@ class RLAgent(BustersAgent):
         
         position_computed = direction + (isFoodInDirection * 4)
         
-        print position_computed
+        print "\tDirection and is Food in direction: ", direction, isFoodInDirection
+        print "\tPosition computed in Q table (row): ",position_computed
         
         return position_computed
 
