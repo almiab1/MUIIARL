@@ -599,7 +599,7 @@ class RLAgent(BustersAgent):
         
         # Reward factor for eating a ghost
         if None in nextState.data.ghostDistances: 
-            reward += 0.4
+            reward += 0.5
         else:
             # print "Ghost distances:"
             # print state.getNumAgents()
@@ -622,7 +622,7 @@ class RLAgent(BustersAgent):
         if state.getScore() > nextState.getScore(): reward -= 0.1
         
         # Penalty factor increasing the distance to the nearest food
-        if state.getDistanceNearestFood() < nextState.getDistanceNearestFood() and state.getNumFood() > 0: reward -= 0.15
+        if state.getDistanceNearestFood() < nextState.getDistanceNearestFood() and state.getNumFood() > 0: reward -= 0.2
         
         
                 
