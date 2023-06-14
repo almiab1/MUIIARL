@@ -271,7 +271,7 @@ class RLAgent(BustersAgent):
         # self.gamma y self.epsilon.
         #
         #################################################################################################
-        self.nRowsQTable = 8
+        self.nRowsQTable = 16
         self.alpha = 0.2
         self.gamma = 0.05
         self.epsilon = 0.8
@@ -418,7 +418,45 @@ class RLAgent(BustersAgent):
         normalized_distance = distance / max_distance
 
         return normalized_distance
+    
+    # Check if ther is a wall in the direction indicated by the parameter "direction" from the position "pacmanPos" in the map "wallsMap"
+    def isWallInDirection(self,pPos, gPos, direction, wallsMap):
+        matrix = np.array(wallsMap.data)
         
+        # Change border to False
+        for i in range(len(matrix)):
+            for j in range(len(matrix[0])):
+                if i == 0 or j == 0 or i == len(matrix)-1 or j == len(matrix[0])-1:
+                    matrix[i][j] = False
+        
+        col_actions = [self.actions["North"], self.actions["South"]]
+        row_actions = [self.actions["West"], self.actions["East"]]
+        
+        # Check North or South
+        if pPos[1] == gPos[1] and direction in col_actions:
+            col = matrix[:,pPos[1]]
+            
+            if direction == self.actions["North"] and pPos[0] > gPos[0]:
+                if True in col[:pPos[0]]:
+                    return 1
+            if direction == self.actions["South"] and pPos[0] < gPos[0]:
+                if True in col[pPos[0]+1:]:
+                    return 1
+            
+        # Check Weast or East
+        if pPos[0] == gPos[0] and direction in row_actions:
+            row = matrix[pPos[0],:]
+            
+            if direction == self.actions["East"] and pPos[1] < gPos[1]:
+                if True in row[pPos[1]+1:]:
+                    return 1
+            if direction == self.actions["West"] and pPos[1] > gPos[1]:
+                if True in row[:pPos[1]]:
+                    return 1
+            
+            
+        return 0
+    
     def computePosition(self, state):
         """
         Compute the row of the qtable for a given state.
@@ -450,10 +488,11 @@ class RLAgent(BustersAgent):
         
         direction = self.getDirection(state.getPacmanPosition(), gost_position)
         isFoodInDirection = self.isFoodInDirection(state.getPacmanPosition(), direction, state.data.food)
+        isWallInDirection = self.isWallInDirection(state.getPacmanPosition(), gost_position, direction, state.getWalls())
         
-        position_computed = direction + (isFoodInDirection * 4)
+        position_computed = direction + (isFoodInDirection * 4) + (isWallInDirection * 8)
         
-        print "\tDirection and is Food in direction: ", direction, isFoodInDirection
+        print "\tDirection and is Food in direction: ", direction, isFoodInDirection, isWallInDirection
         print "\tPosition computed in Q table (row): ",position_computed
         
         return position_computed
