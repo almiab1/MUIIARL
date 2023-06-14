@@ -272,9 +272,9 @@ class RLAgent(BustersAgent):
         #
         #################################################################################################
         self.nRowsQTable = 8
-        self.alpha = 0
-        self.gamma = 0
-        self.epsilon = 1
+        self.alpha = 0.2
+        self.gamma = 0.05
+        self.epsilon = 0.8
         #################################################################################################
         self.actions = {"North": 0, "East": 1, "South": 2, "West": 3, "Stop": 4, "None": 4}
         self.nColumnsQTable = 5
@@ -554,6 +554,39 @@ class RLAgent(BustersAgent):
         #
         #################################################################################################
         reward = 0
+        
+        # Reward factor for winning the game
+        if nextState.isWin(): return 1      
+        
+        # Reward factor for eating a ghost
+        if None in nextState.data.ghostDistances: 
+            reward += 0.4
+        else:
+            # print "Ghost distances:"
+            # print state.getNumAgents()
+            # print nextState.getNumAgents()
+            # print state.data.ghostDistances
+            # print nextState.data.ghostDistances
+            
+            # Penalty factor increasing the distance to the average distance to the ghosts
+            current_ghosts_distance = sum(state.data.ghostDistances) / len(state.data.ghostDistances)        
+            next_ghosts_distance = sum(nextState.data.ghostDistances) / len(nextState.data.ghostDistances)
+            
+            if current_ghosts_distance < next_ghosts_distance: reward -= 0.3
+            if current_ghosts_distance > next_ghosts_distance: reward += 0.2               
+        
+        # Reward factor for eating a food
+        if state.getNumFood() > nextState.getNumFood(): reward += 0.2
+        
+        
+        # Penalty factor for losing score
+        if state.getScore() > nextState.getScore(): reward -= 0.1
+        
+        # Penalty factor increasing the distance to the nearest food
+        if state.getDistanceNearestFood() < nextState.getDistanceNearestFood() and state.getNumFood() > 0: reward -= 0.15
+        
+        
+                
         #################################################################################################
         return reward
 
