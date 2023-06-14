@@ -353,18 +353,16 @@ class RLAgent(BustersAgent):
     # From two positions, get the direction from one to another. 
     # Possible directions: North, East, South, West            
     def getDirection(self, pacman, ghost):
-        row = pacman[0] - ghost[0]
-        col = pacman[1] - ghost[1]
+        height = pacman[0] - ghost[0]
+        width = pacman[1] - ghost[1]
 
-        print "Row-Col diff --> ",row,col
-
-        if abs(row) > abs(col):
-            if row > 0:
+        if abs(height) > abs(width):
+            if height > 0:
                 return self.actions["North"]
             else:
                 return self.actions["South"]
         else:
-            if col > 0:
+            if width > 0:
                return self.actions["West"]
             else:
                 return self.actions["East"]
@@ -409,6 +407,18 @@ class RLAgent(BustersAgent):
 
         return 0
     
+    # Normalice distance of one ghost to pacman in a range of 0 to 1
+    # Max distance is the distance between the two corners of the map (mxn)
+    # Min distance is 0
+    def normalize_distance(distance, width, height):
+        # Calculate the maximum distance in the matrix using the Pythagorean theorem
+        max_distance = (width**2 + height**2)**0.5
+
+        # Normalize the distance
+        normalized_distance = distance / max_distance
+
+        return normalized_distance
+        
     def computePosition(self, state):
         """
         Compute the row of the qtable for a given state.
@@ -433,7 +443,7 @@ class RLAgent(BustersAgent):
         # para los estados hayamos utilizado
         # 
         #################################################################################################
-        print "\tState from compute position: "
+        # print "\tState from compute position: "
         # Get the nearest ghost
         nearest_ghost = np.argmin(state.data.ghostDistances)
         gost_position = state.getGhostPositions()[nearest_ghost]
