@@ -492,8 +492,8 @@ class RLAgent(BustersAgent):
         
         position_computed = direction + (isFoodInDirection * 4) + (isWallInDirection * 8)
         
-        print "\tDirection and is Food in direction: ", direction, isFoodInDirection, isWallInDirection
-        print "\tPosition computed in Q table (row): ",position_computed
+        # print "\tDirection and is Food in direction: ", direction, isFoodInDirection, isWallInDirection
+        # print "\tPosition computed in Q table (row): ",position_computed
         
         return position_computed
 
