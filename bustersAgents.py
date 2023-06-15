@@ -366,6 +366,7 @@ class RLAgent(BustersAgent):
                return self.actions["West"]
             else:
                 return self.actions["East"]
+    
     # Check if there is food in the direction indicated by the parameter "direction" from the position "pacmanPos" in the map "foodMap"
     # Return 1 if there is food, 0 otherwise
     def isFoodInDirection(self,pacmanPos, direction, foodMap):
@@ -406,19 +407,7 @@ class RLAgent(BustersAgent):
                 current_row += col_move
 
         return 0
-    
-    # Normalice distance of one ghost to pacman in a range of 0 to 1
-    # Max distance is the distance between the two corners of the map (mxn)
-    # Min distance is 0
-    def normalize_distance(distance, width, height):
-        # Calculate the maximum distance in the matrix using the Pythagorean theorem
-        max_distance = (width**2 + height**2)**0.5
-
-        # Normalize the distance
-        normalized_distance = distance / max_distance
-
-        return normalized_distance
-    
+        
     # Check if ther is a wall in the direction indicated by the parameter "direction" from the position "pacmanPos" in the map "wallsMap"
     def isWallInDirection(self,pPos, gPos, direction, wallsMap):
         matrix = np.array(wallsMap.data)
@@ -600,18 +589,13 @@ class RLAgent(BustersAgent):
         # Reward factor for eating a ghost
         if None in nextState.data.ghostDistances: 
             reward += 0.5
-        else:
-            # print "Ghost distances:"
-            # print state.getNumAgents()
-            # print nextState.getNumAgents()
-            # print state.data.ghostDistances
-            # print nextState.data.ghostDistances
-            
-            # Penalty factor increasing the distance to the average distance to the ghosts
+        else:            
             current_ghosts_distance = sum(state.data.ghostDistances) / len(state.data.ghostDistances)        
             next_ghosts_distance = sum(nextState.data.ghostDistances) / len(nextState.data.ghostDistances)
             
+            # Penalty factor increasing the distance to the average distance to the ghosts
             if current_ghosts_distance < next_ghosts_distance: reward -= 0.3
+            # Rewar factor decreasing the distance to the average distance to the ghosts
             if current_ghosts_distance > next_ghosts_distance: reward += 0.2               
         
         # Reward factor for eating a food
@@ -653,8 +637,6 @@ class RLAgent(BustersAgent):
         #################################################################################################
         q = self.getQValue(state, action)
 
-
-        #################################################################################################
         if nextState.isWin():
             # If a terminal state is reached
             new_q = ((1 - self.alpha) * q) + (self.alpha * reward)
@@ -665,6 +647,7 @@ class RLAgent(BustersAgent):
 
         self.setQValue(state, action, new_q)
         self.writeQtable()
+        #################################################################################################
 
 
     def getPolicy(self, state):
