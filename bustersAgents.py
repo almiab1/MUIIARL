@@ -272,8 +272,8 @@ class RLAgent(BustersAgent):
         #
         #################################################################################################
         self.nRowsQTable = 16
-        self.alpha = 0.2
-        self.gamma = 0.05
+        self.alpha = 0.05
+        self.gamma = 0.75
         self.epsilon = 0.8
         #################################################################################################
         self.actions = {"North": 0, "East": 1, "South": 2, "West": 3, "Stop": 4, "None": 4}
@@ -350,6 +350,10 @@ class RLAgent(BustersAgent):
                 self.table_file.write(str(item)+" ")
             self.table_file.write("\n")       
 
+    # #################################################################################################
+    # METHODS IMPLEMENTED
+    # #################################################################################################
+
     # From two positions, get the direction from one to another. 
     # Possible directions: North, East, South, West            
     def getDirection(self, pacman, ghost):
@@ -421,30 +425,18 @@ class RLAgent(BustersAgent):
         col_actions = [self.actions["North"], self.actions["South"]]
         row_actions = [self.actions["West"], self.actions["East"]]
         
-        # Check North or South
-        if pPos[1] == gPos[1] and direction in col_actions:
-            col = matrix[:,pPos[1]]
+        # Check North or South and if there is a wall 
+        # in the direction indicated by the parameter "direction" 
+        # from the position "pacmanPos" in the map "wallsMap"
+        if (pPos[1] == gPos[1]) and (direction in col_actions) and True in matrix[:,pPos[1]]: return 1
             
-            if direction == self.actions["North"] and pPos[0] > gPos[0]:
-                if True in col[:pPos[0]]:
-                    return 1
-            if direction == self.actions["South"] and pPos[0] < gPos[0]:
-                if True in col[pPos[0]+1:]:
-                    return 1
-            
-        # Check Weast or East
-        if pPos[0] == gPos[0] and direction in row_actions:
-            row = matrix[pPos[0],:]
-            
-            if direction == self.actions["East"] and pPos[1] < gPos[1]:
-                if True in row[pPos[1]+1:]:
-                    return 1
-            if direction == self.actions["West"] and pPos[1] > gPos[1]:
-                if True in row[:pPos[1]]:
-                    return 1
-            
+        # Check Weast or East and if there is a wall 
+        # in the direction indicated by the parameter "direction" 
+        # from the position "pacmanPos" in the map "wallsMap"
+        if (pPos[0] == gPos[0]) and (direction in row_actions) and True in matrix[pPos[0],:]: return 1
             
         return 0
+    # #################################################################################################
     
     def computePosition(self, state):
         """
@@ -472,8 +464,17 @@ class RLAgent(BustersAgent):
         #################################################################################################
         # print "\tState from compute position: "
         # Get the nearest ghost
-        nearest_ghost = np.argmin(state.data.ghostDistances)
+        # TODO: fix get neares ghost avoiding Nne parameters
+        ghost_no_none = [(value, index) for index, value in enumerate(state.data.ghostDistances) if value is not None]
+        dist, indx = zip(*ghost_no_none)
+
+        nearest_ghost = indx[np.argmin(dist)]
+        # nearest_ghost = np.argmin(state.data.ghostDistances)
         gost_position = state.getGhostPositions()[nearest_ghost]
+
+        print "NGP: ", nearest_ghost
+        print "NGD: ", state.data.ghostDistances
+
         
         direction = self.getDirection(state.getPacmanPosition(), gost_position)
         isFoodInDirection = self.isFoodInDirection(state.getPacmanPosition(), direction, state.data.food)
@@ -498,7 +499,9 @@ class RLAgent(BustersAgent):
 
         return self.q_table[position][action_column]
 
-    # My implementation
+    # #################################################################################################
+    # METHODS IMPLEMENTED
+    # #################################################################################################
     def setQValue(self, state, action, value):
         """
           Set Q(state,action) to value
@@ -507,6 +510,7 @@ class RLAgent(BustersAgent):
         action_column = self.actions[action]
 
         self.q_table[position][action_column] = value
+    # #################################################################################################
 
     def computeValueFromQValues(self, state):
         """
@@ -583,30 +587,40 @@ class RLAgent(BustersAgent):
         #################################################################################################
         reward = 0
         
-        # Reward factor for winning the game
-        if nextState.isWin(): return 1      
+        # Reward factor for winning/lose the game
+        if nextState.isWin(): return 1 
+        if nextState.isLose(): return -1 
         
         # Reward factor for eating a ghost
         if None in nextState.data.ghostDistances: 
-            reward += 0.5
-        else:            
-            current_ghosts_distance = sum(state.data.ghostDistances) / len(state.data.ghostDistances)        
-            next_ghosts_distance = sum(nextState.data.ghostDistances) / len(nextState.data.ghostDistances)
+            reward += 0.6
+        else:
+            # Nearest ghost distance
+            print "G: ", state.data.ghostDistances
+            # Get nearest ghost distance
+            nearest_ghost = np.argmin(state.data.ghostDistances)
+            print "Nearest ghost distance: ", nearest_ghost
+            current_ghosts_distance = state.getGhostPositions()[nearest_ghost]            
+            next_ghosts_distance = nextState.getGhostPositions()[nearest_ghost]   
+            # current_ghosts_distance = sum(state.data.ghostDistances) / len(state.data.ghostDistances)        
+            # next_ghosts_distance = sum(nextState.data.ghostDistances) / len(nextState.data.ghostDistances)
             
-            # Penalty factor increasing the distance to the average distance to the ghosts
-            if current_ghosts_distance < next_ghosts_distance: reward -= 0.3
-            # Rewar factor decreasing the distance to the average distance to the ghosts
-            if current_ghosts_distance > next_ghosts_distance: reward += 0.2               
+            # Reward factor increasing/decreasing the distance to the average distance to the ghosts
+            if current_ghosts_distance > next_ghosts_distance: reward += 0.2
+            else: reward -= 0.4
         
-        # Reward factor for eating a food
-        if state.getNumFood() > nextState.getNumFood(): reward += 0.2
-        
+        # Check if there is food on the map
+        if state.getNumFood() > 0:
+            # Reward factor for eating a food
+            if state.getNumFood() > nextState.getNumFood(): reward += 0.4
+            else: reward += 0.4
+            # Penalty factor increasing the distance to the nearest food
+            if state.getDistanceNearestFood() > nextState.getDistanceNearestFood(): reward += 0.1
+            else: reward -= 0.1
         
         # Penalty factor for losing score
         if state.getScore() > nextState.getScore(): reward -= 0.1
         
-        # Penalty factor increasing the distance to the nearest food
-        if state.getDistanceNearestFood() < nextState.getDistanceNearestFood() and state.getNumFood() > 0: reward -= 0.2
         
         
                 
@@ -620,13 +634,13 @@ class RLAgent(BustersAgent):
           state = action => nextState and reward transition.
           You should do your Q-Value update here
         """
-        print "Started in state:"
-        self.printInfo(state)
-        print "Took action: ", action
-        print "Ended in state:"
-        self.printInfo(nextState)
-        print "Got reward: ", reward
-        print "---------------------------------"
+        # print "Started in state:"
+        # self.printInfo(state)
+        # print "Took action: ", action
+        # print "Ended in state:"
+        # self.printInfo(nextState)
+        # print "Got reward: ", reward
+        # print "---------------------------------"
         ###########################	INSERTA TU CODIGO AQUI ##########################################
         #
         # INSTRUCCIONES:
@@ -642,8 +656,8 @@ class RLAgent(BustersAgent):
             new_q = ((1 - self.alpha) * q) + (self.alpha * reward)
         else:
             # If the game continues
-            max_action = self.computeValueFromQValues(nextState)
-            new_q = ((1 - self.alpha) * q) + (self.alpha * (reward + self.gamma * max_action))
+            max_q = self.getValue(nextState)
+            new_q = ((1 - self.alpha) * q) + (self.alpha * (reward + self.gamma * max_q))
 
         self.setQValue(state, action, new_q)
         self.writeQtable()
