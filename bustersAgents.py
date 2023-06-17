@@ -436,6 +436,14 @@ class RLAgent(BustersAgent):
         if (pPos[0] == gPos[0]) and (direction in row_actions) and True in matrix[pPos[0],:]: return 1
             
         return 0
+    
+    def getNearestGhostIndex(self, state):
+        ghost_no_none = [(value, index) for index, value in enumerate(state.data.ghostDistances) if value is not None]
+        dist, indx = zip(*ghost_no_none)
+
+        nearest_ghost = indx[np.argmin(dist)]
+        
+        return nearest_ghost
     # #################################################################################################
     
     def computePosition(self, state):
@@ -462,29 +470,16 @@ class RLAgent(BustersAgent):
         # para los estados hayamos utilizado
         # 
         #################################################################################################
-        # print "\tState from compute position: "
         # Get the nearest ghost
-        # TODO: fix get neares ghost avoiding Nne parameters
-        ghost_no_none = [(value, index) for index, value in enumerate(state.data.ghostDistances) if value is not None]
-        dist, indx = zip(*ghost_no_none)
-
-        nearest_ghost = indx[np.argmin(dist)]
-        # nearest_ghost = np.argmin(state.data.ghostDistances)
-        gost_position = state.getGhostPositions()[nearest_ghost]
-
-        print "NGP: ", nearest_ghost
-        print "NGD: ", state.data.ghostDistances
-
+        nearest_ghost_indx = self.getNearestGhostIndex(state)
+        ghost_pos = state.getGhostPositions()[nearest_ghost_indx]
         
-        direction = self.getDirection(state.getPacmanPosition(), gost_position)
+        direction = self.getDirection(state.getPacmanPosition(), ghost_pos)
         isFoodInDirection = self.isFoodInDirection(state.getPacmanPosition(), direction, state.data.food)
-        isWallInDirection = self.isWallInDirection(state.getPacmanPosition(), gost_position, direction, state.getWalls())
+        isWallInDirection = self.isWallInDirection(state.getPacmanPosition(), ghost_pos, direction, state.getWalls())
         
         position_computed = direction + (isFoodInDirection * 4) + (isWallInDirection * 8)
-        
-        # print "\tDirection and is Food in direction: ", direction, isFoodInDirection, isWallInDirection
-        # print "\tPosition computed in Q table (row): ",position_computed
-        
+                
         return position_computed
 
     def getQValue(self, state, action):
@@ -591,17 +586,18 @@ class RLAgent(BustersAgent):
         if nextState.isWin(): return 1 
         if nextState.isLose(): return -1 
         
+        # Get num of None in ghost distances
+        
+        # TODO: fix None detection in ghost distances, if there are more than two ghosts doesn't work
         # Reward factor for eating a ghost
         if None in nextState.data.ghostDistances: 
             reward += 0.6
         else:
-            # Nearest ghost distance
-            print "G: ", state.data.ghostDistances
             # Get nearest ghost distance
-            nearest_ghost = np.argmin(state.data.ghostDistances)
-            print "Nearest ghost distance: ", nearest_ghost
-            current_ghosts_distance = state.getGhostPositions()[nearest_ghost]            
-            next_ghosts_distance = nextState.getGhostPositions()[nearest_ghost]   
+            nearest_ghost_indx = self.getNearestGhostIndex(state)
+            current_ghosts_distance = state.data.ghostDistances[nearest_ghost_indx]            
+            next_ghosts_distance = nextState.data.ghostDistances[nearest_ghost_indx]
+                        
             # current_ghosts_distance = sum(state.data.ghostDistances) / len(state.data.ghostDistances)        
             # next_ghosts_distance = sum(nextState.data.ghostDistances) / len(nextState.data.ghostDistances)
             
