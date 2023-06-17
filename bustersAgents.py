@@ -588,19 +588,20 @@ class RLAgent(BustersAgent):
         
         # Get num of None in ghost distances
         
-        # TODO: fix None detection in ghost distances, if there are more than two ghosts doesn't work
         # Reward factor for eating a ghost
-        if None in nextState.data.ghostDistances: 
+        
+        # Get numOfNone in ghost distances
+        current_nones = state.data.ghostDistances.count(None)
+        next_nones = nextState.data.ghostDistances.count(None)
+            
+        if current_nones != next_nones: 
             reward += 0.6
         else:
             # Get nearest ghost distance
             nearest_ghost_indx = self.getNearestGhostIndex(state)
             current_ghosts_distance = state.data.ghostDistances[nearest_ghost_indx]            
             next_ghosts_distance = nextState.data.ghostDistances[nearest_ghost_indx]
-                        
-            # current_ghosts_distance = sum(state.data.ghostDistances) / len(state.data.ghostDistances)        
-            # next_ghosts_distance = sum(nextState.data.ghostDistances) / len(nextState.data.ghostDistances)
-            
+                                    
             # Reward factor increasing/decreasing the distance to the average distance to the ghosts
             if current_ghosts_distance > next_ghosts_distance: reward += 0.2
             else: reward -= 0.4
@@ -616,6 +617,10 @@ class RLAgent(BustersAgent):
         
         # Penalty factor for losing score
         if state.getScore() > nextState.getScore(): reward -= 0.1
+        
+        print "\n---------------------------------"
+        print "Reward: ", reward
+        print "---------------------------------\n"
         
         
         
