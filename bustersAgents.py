@@ -562,7 +562,6 @@ class RLAgent(BustersAgent):
         
         return self.getPolicy(state)
 
-    # TODO: Implementar esta funcion
     def getReward(self, state, nextState):
         """
           Return a reward value based on the information of state and nextState		
@@ -609,11 +608,11 @@ class RLAgent(BustersAgent):
         # Check if there is food on the map
         if state.getNumFood() > 0:
             # Reward factor for eating a food
-            if state.getNumFood() > nextState.getNumFood(): reward += 0.4
-            else: reward += 0.4
-            # Penalty factor increasing the distance to the nearest food
-            if state.getDistanceNearestFood() > nextState.getDistanceNearestFood(): reward += 0.1
-            else: reward -= 0.1
+            if state.getNumFood() > nextState.getNumFood(): reward += 0.2
+            else:
+                # Penalty factor increasing the distance to the nearest food
+                if state.getDistanceNearestFood() > nextState.getDistanceNearestFood(): reward += 0.1
+                else: reward -= 0.1
         
         # Penalty factor for losing score
         if state.getScore() > nextState.getScore(): reward -= 0.1
@@ -628,7 +627,6 @@ class RLAgent(BustersAgent):
         #################################################################################################
         return reward
 
-    # TODO: Implementar esta funcion
     def update(self, state, action, nextState, reward):
         """
           The parent class calls this to observe a
