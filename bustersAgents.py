@@ -273,8 +273,8 @@ class RLAgent(BustersAgent):
         #################################################################################################
         self.nRowsQTable = 16
         self.alpha = 0.05
-        self.gamma = 0.75
-        self.epsilon = 0.8
+        self.gamma = 0.8
+        self.epsilon = 0.75
         #################################################################################################
         self.actions = {"North": 0, "East": 1, "South": 2, "West": 3, "Stop": 4, "None": 4}
         self.nColumnsQTable = 5
@@ -584,9 +584,7 @@ class RLAgent(BustersAgent):
         # Reward factor for winning/lose the game
         if nextState.isWin(): return 1 
         if nextState.isLose(): return -1 
-        
-        # Get num of None in ghost distances
-        
+                
         # Reward factor for eating a ghost
         
         # Get numOfNone in ghost distances
@@ -616,16 +614,9 @@ class RLAgent(BustersAgent):
         
         # Penalty factor for losing score
         if state.getScore() > nextState.getScore(): reward -= 0.1
-        
-        print "\n---------------------------------"
-        print "Reward: ", reward
-        print "---------------------------------\n"
-        
-        
-        
-                
-        #################################################################################################
+                        
         return reward
+        #################################################################################################
 
     def update(self, state, action, nextState, reward):
         """
@@ -655,8 +646,8 @@ class RLAgent(BustersAgent):
             new_q = ((1 - self.alpha) * q) + (self.alpha * reward)
         else:
             # If the game continues
-            max_q = self.getValue(nextState)
-            new_q = ((1 - self.alpha) * q) + (self.alpha * (reward + self.gamma * max_q))
+            estimated_q = reward + self.gamma * self.getValue(nextState)
+            new_q = (1 - self.alpha) * q + self.alpha * estimated_q
 
         self.setQValue(state, action, new_q)
         self.writeQtable()
